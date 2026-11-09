@@ -1,0 +1,12 @@
+Guarde aquí las capturas con estos nombres exactos (PNG o JPG). El informe las inserta solas.
+01-github-repositorio.png   Página del repositorio en GitHub (carpetas angular-app y spring-boot-api)
+02-railway-mysql.png        Railway > MySQL > pestaña Data, mostrando las tablas
+03-railway-variables.png    Railway > servicio API > Variables (con los valores ocultos)
+04-api-planes.png           Navegador abriendo https://<api>.up.railway.app/api/planes
+05-vercel-despliegue.png    Vercel > proyecto > Deployment "Ready" con el dominio
+06-cors-preflight.png       F12 > Red: petición OPTIONS con Access-Control-Allow-Origin
+07-frontend-inicio.png      Página de inicio desde la URL de Vercel
+08-crud-registrar.png       Crear un registro (p. ej. una clase)
+09-crud-actualizar.png      Editar ese registro
+10-crud-eliminar.png        Eliminarlo y ver la lista actualizada
+11-movil.png                La app en el teléfono con datos móviles
