@@ -17,6 +17,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 
@@ -44,6 +53,20 @@ public class EmailService {
     private String remitenteNombre;
 
     private final RestClient brevo = RestClient.builder().baseUrl("https://api.brevo.com/v3").build();
+
+    /** URL de una aplicación web de Google Apps Script que envía el correo con Gmail (ver despliegue/apps-script-correo.gs).
+     *  Gratis y por HTTPS, así que funciona en Railway aunque bloquee SMTP. */
+    @Value("${app.mail.relay-url:}")
+    private String relayUrl;
+
+    @Value("${app.mail.relay-token:}")
+    private String relayToken;
+
+    private final ObjectMapper json = new ObjectMapper();
+    private final HttpClient http = HttpClient.newBuilder()
+            .connectTimeout(Duration.ofSeconds(10))
+            .followRedirects(HttpClient.Redirect.NEVER)
+            .build();
 
 
     public void enviarCodigoVerificacion(Usuario usuario, String codigo, int minutos) {
@@ -116,6 +139,10 @@ public class EmailService {
 
     /** Envía el correo por la API de Brevo si hay clave configurada; si no, por SMTP. */
     private void enviar(String para, String asunto, String html) throws MessagingException {
+        if (relayUrl != null && !relayUrl.isBlank()) {
+            enviarPorAppsScript(para, asunto, html);
+            return;
+        }
         if (brevoApiKey != null && !brevoApiKey.isBlank()) {
             brevo.post()
                     .uri("/smtp/email")
@@ -137,5 +164,37 @@ public class EmailService {
         helper.setSubject(asunto);
         helper.setText(html, true);
         mailSender.send(mensaje);
+    }
+
+    /**
+     * Apps Script responde al POST con un 302 hacia script.googleusercontent.com;
+     * el resultado ({"ok":true}) se obtiene siguiendo esa redirección con GET.
+     */
+    private void enviarPorAppsScript(String para, String asunto, String html) {
+        try {
+            String cuerpo = json.writeValueAsString(Map.of(
+                    "token", relayToken, "to", para, "subject", asunto, "html", html, "nombre", remitenteNombre));
+            HttpResponse<String> resp = http.send(HttpRequest.newBuilder(URI.create(relayUrl))
+                    .timeout(Duration.ofSeconds(20))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(cuerpo))
+                    .build(), HttpResponse.BodyHandlers.ofString());
+            if (resp.statusCode() / 100 == 3) {
+                String destino = resp.headers().firstValue("Location")
+                        .orElseThrow(() -> new RestClientException("Apps Script devolvió una redirección sin Location"));
+                resp = http.send(HttpRequest.newBuilder(URI.create(destino)).timeout(Duration.ofSeconds(20)).GET().build(),
+                        HttpResponse.BodyHandlers.ofString());
+            }
+            JsonNode r = resp.statusCode() == 200 ? json.readTree(resp.body()) : null;
+            if (r == null || !r.path("ok").asBoolean(false)) {
+                throw new RestClientException("Apps Script respondió " + resp.statusCode() + ": "
+                        + (r != null ? r.path("error").asText() : "respuesta inesperada"));
+            }
+        } catch (IOException e) {
+            throw new RestClientException("No se pudo contactar con Apps Script: " + e.getMessage(), e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RestClientException("Envío interrumpido", e);
+        }
     }
 }
