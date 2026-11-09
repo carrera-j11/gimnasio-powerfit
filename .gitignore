@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.angular/
+target/
+node-express-api/.env
+.idea/
+.vscode/
+*.iml
+
+# Secretos locales: nunca se suben al repositorio
+spring-boot-api/src/main/resources/secretos-local.properties
+usersGym.txt
+.env
+*.env.local

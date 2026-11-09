@@ -1,0 +1,3690 @@
+{
+  "info": {
+    "name": "Gimnasio PowerFit API (Spring Boot y Node.js)",
+    "description": "1) Elija el environment (Spring Boot 8080 o Node.js 3000). 2) Ejecute las carpetas en orden (01 a 10) o toda la colección con el Runner. Todas las peticiones usan el token del ADMIN. Los datos de las personas (cédula, email, celular) se generan solos, así que la colección se puede ejecutar varias veces. Nota: el máximo de 5 recepcionistas se mantiene entre ejecuciones; si ya hay 5, \"Crear RECEPCIONISTA\" responde 400 (rechace o elimine alguna en la carpeta 04).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{tokenAdmin}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "01 - Ingreso del ADMIN",
+      "item": [
+        {
+          "name": "Login ADMIN (guarda tokenAdmin)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@gimnasio.com\",\n  \"password\": \"Admin123*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  "  pm.collectionVariables.set('tokenAdmin', pm.response.json().token);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login ADMIN con contraseña incorrecta (401)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@gimnasio.com\",\n  \"password\": \"Incorrecta1*\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Perfil del ADMIN",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/perfil",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "perfil"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "description": "Inicia sesión como administrador. El token se guarda en {{tokenAdmin}} y lo usan todas las demás peticiones."
+    },
+    {
+      "name": "02 - Crear usuarios (cliente, entrenador, recepcionista)",
+      "item": [
+        {
+          "name": "Crear CLIENTE (SOCIO) 1",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "usuarios"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula\": \"{{cedSocio1}}\",\n  \"nombres\": \"Carlos Andres\",\n  \"apellidos\": \"Mendoza Vera\",\n  \"email\": \"{{emailSocio1}}\",\n  \"celular\": \"{{celSocio1}}\",\n  \"fechaNacimiento\": \"2000-04-12\",\n  \"password\": \"Clave123*\",\n  \"rol\": \"SOCIO\",\n  \"objetivo\": \"Ganar masa muscular\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = (n) => Math.floor(Math.random() * n);",
+                  "function cedula() {",
+                  "  let c = String(1 + r(24)).padStart(2, '0') + r(6);",
+                  "  for (let i = 0; i < 6; i++) c += r(10);",
+                  "  const k = [2, 1, 2, 1, 2, 1, 2, 1, 2];",
+                  "  let s = 0;",
+                  "  for (let i = 0; i < 9; i++) { let v = Number(c[i]) * k[i]; if (v > 9) v -= 9; s += v; }",
+                  "  return c + ((10 - (s % 10)) % 10);",
+                  "}",
+                  "const celular = () => '09' + String(r(100000000)).padStart(8, '0');",
+                  "const sufijo = Date.now().toString().slice(-7) + r(10);",
+                  "pm.collectionVariables.set('cedSocio1', cedula());",
+                  "pm.collectionVariables.set('celSocio1', celular());",
+                  "pm.collectionVariables.set('emailSocio1', 'socio1.' + sufijo + '@gimnasio.com');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) {",
+                  "  const r = pm.response.json();",
+                  "  pm.collectionVariables.set('socio1UsuarioId', r.id);",
+                  "  console.log('socio1UsuarioId =', r.id);",
+                  "  pm.collectionVariables.set('socio1Id', r.perfilId);",
+                  "  console.log('socio1Id =', r.perfilId);",
+                  "}",
+                  "pm.test('Queda PENDIENTE_VERIFICACION (se envió el código al correo)', () => pm.expect(pm.response.json().estado).to.eql('PENDIENTE_VERIFICACION'));",
+                  "console.log('>>> Copie el código de verificación de ' + pm.collectionVariables.get('socio1UsuarioId') + ' (consola del servidor o correo) en la variable codigoSocio1');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear CLIENTE (SOCIO) 2",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "usuarios"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula\": \"{{cedSocio2}}\",\n  \"nombres\": \"Maria Jose\",\n  \"apellidos\": \"Paredes Luna\",\n  \"email\": \"{{emailSocio2}}\",\n  \"celular\": \"{{celSocio2}}\",\n  \"fechaNacimiento\": \"1998-09-03\",\n  \"password\": \"Clave123*\",\n  \"rol\": \"SOCIO\",\n  \"objetivo\": \"Bajar de peso\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = (n) => Math.floor(Math.random() * n);",
+                  "function cedula() {",
+                  "  let c = String(1 + r(24)).padStart(2, '0') + r(6);",
+                  "  for (let i = 0; i < 6; i++) c += r(10);",
+                  "  const k = [2, 1, 2, 1, 2, 1, 2, 1, 2];",
+                  "  let s = 0;",
+                  "  for (let i = 0; i < 9; i++) { let v = Number(c[i]) * k[i]; if (v > 9) v -= 9; s += v; }",
+                  "  return c + ((10 - (s % 10)) % 10);",
+                  "}",
+                  "const celular = () => '09' + String(r(100000000)).padStart(8, '0');",
+                  "const sufijo = Date.now().toString().slice(-7) + r(10);",
+                  "pm.collectionVariables.set('cedSocio2', cedula());",
+                  "pm.collectionVariables.set('celSocio2', celular());",
+                  "pm.collectionVariables.set('emailSocio2', 'socio2.' + sufijo + '@gimnasio.com');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) {",
+                  "  const r = pm.response.json();",
+                  "  pm.collectionVariables.set('socio2UsuarioId', r.id);",
+                  "  console.log('socio2UsuarioId =', r.id);",
+                  "  pm.collectionVariables.set('socio2Id', r.perfilId);",
+                  "  console.log('socio2Id =', r.perfilId);",
+                  "}",
+                  "pm.test('Queda PENDIENTE_VERIFICACION (se envió el código al correo)', () => pm.expect(pm.response.json().estado).to.eql('PENDIENTE_VERIFICACION'));",
+                  "console.log('>>> Copie el código de verificación de ' + pm.collectionVariables.get('socio2UsuarioId') + ' (consola del servidor o correo) en la variable codigoSocio2');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear ENTRENADOR",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "usuarios"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula\": \"{{cedEntrenador}}\",\n  \"nombres\": \"Luis Fernando\",\n  \"apellidos\": \"Castro Rios\",\n  \"email\": \"{{emailEntrenador}}\",\n  \"celular\": \"{{celEntrenador}}\",\n  \"fechaNacimiento\": \"1992-01-20\",\n  \"password\": \"Clave123*\",\n  \"rol\": \"ENTRENADOR\",\n  \"especialidad\": \"Crossfit y funcional\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = (n) => Math.floor(Math.random() * n);",
+                  "function cedula() {",
+                  "  let c = String(1 + r(24)).padStart(2, '0') + r(6);",
+                  "  for (let i = 0; i < 6; i++) c += r(10);",
+                  "  const k = [2, 1, 2, 1, 2, 1, 2, 1, 2];",
+                  "  let s = 0;",
+                  "  for (let i = 0; i < 9; i++) { let v = Number(c[i]) * k[i]; if (v > 9) v -= 9; s += v; }",
+                  "  return c + ((10 - (s % 10)) % 10);",
+                  "}",
+                  "const celular = () => '09' + String(r(100000000)).padStart(8, '0');",
+                  "const sufijo = Date.now().toString().slice(-7) + r(10);",
+                  "pm.collectionVariables.set('cedEntrenador', cedula());",
+                  "pm.collectionVariables.set('celEntrenador', celular());",
+                  "pm.collectionVariables.set('emailEntrenador', 'entrenador.' + sufijo + '@gimnasio.com');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) {",
+                  "  const r = pm.response.json();",
+                  "  pm.collectionVariables.set('entrenadorUsuarioId', r.id);",
+                  "  console.log('entrenadorUsuarioId =', r.id);",
+                  "  pm.collectionVariables.set('entrenadorId', r.perfilId);",
+                  "  console.log('entrenadorId =', r.perfilId);",
+                  "}",
+                  "pm.test('Queda PENDIENTE_VERIFICACION (se envió el código al correo)', () => pm.expect(pm.response.json().estado).to.eql('PENDIENTE_VERIFICACION'));",
+                  "console.log('>>> Copie el código de verificación de ' + pm.collectionVariables.get('entrenadorUsuarioId') + ' (consola del servidor o correo) en la variable codigoEntrenador');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear RECEPCIONISTA",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "usuarios"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula\": \"{{cedRecepcion}}\",\n  \"nombres\": \"Ana Lucia\",\n  \"apellidos\": \"Torres Salazar\",\n  \"email\": \"{{emailRecepcion}}\",\n  \"celular\": \"{{celRecepcion}}\",\n  \"fechaNacimiento\": \"1997-06-15\",\n  \"password\": \"Clave123*\",\n  \"rol\": \"RECEPCIONISTA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = (n) => Math.floor(Math.random() * n);",
+                  "function cedula() {",
+                  "  let c = String(1 + r(24)).padStart(2, '0') + r(6);",
+                  "  for (let i = 0; i < 6; i++) c += r(10);",
+                  "  const k = [2, 1, 2, 1, 2, 1, 2, 1, 2];",
+                  "  let s = 0;",
+                  "  for (let i = 0; i < 9; i++) { let v = Number(c[i]) * k[i]; if (v > 9) v -= 9; s += v; }",
+                  "  return c + ((10 - (s % 10)) % 10);",
+                  "}",
+                  "const celular = () => '09' + String(r(100000000)).padStart(8, '0');",
+                  "const sufijo = Date.now().toString().slice(-7) + r(10);",
+                  "pm.collectionVariables.set('cedRecepcion', cedula());",
+                  "pm.collectionVariables.set('celRecepcion', celular());",
+                  "pm.collectionVariables.set('emailRecepcion', 'recepcion.' + sufijo + '@gimnasio.com');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) {",
+                  "  const r = pm.response.json();",
+                  "  pm.collectionVariables.set('recepcionistaUsuarioId', r.id);",
+                  "  console.log('recepcionistaUsuarioId =', r.id);",
+                  "}",
+                  "pm.test('Queda PENDIENTE_VERIFICACION (se envió el código al correo)', () => pm.expect(pm.response.json().estado).to.eql('PENDIENTE_VERIFICACION'));",
+                  "console.log('>>> Copie el código de verificación de ' + pm.collectionVariables.get('recepcionistaUsuarioId') + ' (consola del servidor o correo) en la variable codigoRecepcion');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear CLIENTE que será RECHAZADO",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "usuarios"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula\": \"{{cedRechazo}}\",\n  \"nombres\": \"Pedro Pablo\",\n  \"apellidos\": \"Jaramillo Ortiz\",\n  \"email\": \"{{emailRechazo}}\",\n  \"celular\": \"{{celRechazo}}\",\n  \"fechaNacimiento\": \"2001-11-30\",\n  \"password\": \"Clave123*\",\n  \"rol\": \"SOCIO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = (n) => Math.floor(Math.random() * n);",
+                  "function cedula() {",
+                  "  let c = String(1 + r(24)).padStart(2, '0') + r(6);",
+                  "  for (let i = 0; i < 6; i++) c += r(10);",
+                  "  const k = [2, 1, 2, 1, 2, 1, 2, 1, 2];",
+                  "  let s = 0;",
+                  "  for (let i = 0; i < 9; i++) { let v = Number(c[i]) * k[i]; if (v > 9) v -= 9; s += v; }",
+                  "  return c + ((10 - (s % 10)) % 10);",
+                  "}",
+                  "const celular = () => '09' + String(r(100000000)).padStart(8, '0');",
+                  "const sufijo = Date.now().toString().slice(-7) + r(10);",
+                  "pm.collectionVariables.set('cedRechazo', cedula());",
+                  "pm.collectionVariables.set('celRechazo', celular());",
+                  "pm.collectionVariables.set('emailRechazo', 'rechazo.' + sufijo + '@gimnasio.com');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) {",
+                  "  const r = pm.response.json();",
+                  "  pm.collectionVariables.set('rechazoUsuarioId', r.id);",
+                  "  console.log('rechazoUsuarioId =', r.id);",
+                  "}",
+                  "pm.test('Queda PENDIENTE_VERIFICACION (se envió el código al correo)', () => pm.expect(pm.response.json().estado).to.eql('PENDIENTE_VERIFICACION'));",
+                  "console.log('>>> Copie el código de verificación de ' + pm.collectionVariables.get('rechazoUsuarioId') + ' (consola del servidor o correo) en la variable codigoRechazo');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Misma cédula con OTRO rol (409: una persona solo tiene un rol)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "usuarios"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula\": \"{{cedSocio1}}\",\n  \"nombres\": \"Carlos Andres\",\n  \"apellidos\": \"Mendoza Vera\",\n  \"email\": \"{{emailTmp}}\",\n  \"celular\": \"{{celTmp}}\",\n  \"fechaNacimiento\": \"2000-04-12\",\n  \"password\": \"Clave123*\",\n  \"rol\": \"ENTRENADOR\",\n  \"especialidad\": \"Spinning\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = (n) => Math.floor(Math.random() * n);",
+                  "function cedula() {",
+                  "  let c = String(1 + r(24)).padStart(2, '0') + r(6);",
+                  "  for (let i = 0; i < 6; i++) c += r(10);",
+                  "  const k = [2, 1, 2, 1, 2, 1, 2, 1, 2];",
+                  "  let s = 0;",
+                  "  for (let i = 0; i < 9; i++) { let v = Number(c[i]) * k[i]; if (v > 9) v -= 9; s += v; }",
+                  "  return c + ((10 - (s % 10)) % 10);",
+                  "}",
+                  "const celular = () => '09' + String(r(100000000)).padStart(8, '0');",
+                  "const sufijo = Date.now().toString().slice(-7) + r(10);",
+                  "pm.collectionVariables.set('cedTmp', cedula());",
+                  "pm.collectionVariables.set('celTmp', celular());",
+                  "pm.collectionVariables.set('emailTmp', 'tmp.' + sufijo + '@gimnasio.com');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Email repetido (409)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "usuarios"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula\": \"{{cedTmp}}\",\n  \"nombres\": \"Jorge Luis\",\n  \"apellidos\": \"Vargas Mena\",\n  \"email\": \"{{emailSocio1}}\",\n  \"celular\": \"{{celTmp}}\",\n  \"fechaNacimiento\": \"1999-02-02\",\n  \"password\": \"Clave123*\",\n  \"rol\": \"SOCIO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = (n) => Math.floor(Math.random() * n);",
+                  "function cedula() {",
+                  "  let c = String(1 + r(24)).padStart(2, '0') + r(6);",
+                  "  for (let i = 0; i < 6; i++) c += r(10);",
+                  "  const k = [2, 1, 2, 1, 2, 1, 2, 1, 2];",
+                  "  let s = 0;",
+                  "  for (let i = 0; i < 9; i++) { let v = Number(c[i]) * k[i]; if (v > 9) v -= 9; s += v; }",
+                  "  return c + ((10 - (s % 10)) % 10);",
+                  "}",
+                  "const celular = () => '09' + String(r(100000000)).padStart(8, '0');",
+                  "const sufijo = Date.now().toString().slice(-7) + r(10);",
+                  "pm.collectionVariables.set('cedTmp', cedula());",
+                  "pm.collectionVariables.set('celTmp', celular());",
+                  "pm.collectionVariables.set('emailTmp', 'tmp.' + sufijo + '@gimnasio.com');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Celular repetido (409)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "usuarios"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula\": \"{{cedTmp}}\",\n  \"nombres\": \"Jorge Luis\",\n  \"apellidos\": \"Vargas Mena\",\n  \"email\": \"{{emailTmp}}\",\n  \"celular\": \"{{celEntrenador}}\",\n  \"fechaNacimiento\": \"1999-02-02\",\n  \"password\": \"Clave123*\",\n  \"rol\": \"RECEPCIONISTA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = (n) => Math.floor(Math.random() * n);",
+                  "function cedula() {",
+                  "  let c = String(1 + r(24)).padStart(2, '0') + r(6);",
+                  "  for (let i = 0; i < 6; i++) c += r(10);",
+                  "  const k = [2, 1, 2, 1, 2, 1, 2, 1, 2];",
+                  "  let s = 0;",
+                  "  for (let i = 0; i < 9; i++) { let v = Number(c[i]) * k[i]; if (v > 9) v -= 9; s += v; }",
+                  "  return c + ((10 - (s % 10)) % 10);",
+                  "}",
+                  "const celular = () => '09' + String(r(100000000)).padStart(8, '0');",
+                  "const sufijo = Date.now().toString().slice(-7) + r(10);",
+                  "pm.collectionVariables.set('cedTmp', cedula());",
+                  "pm.collectionVariables.set('celTmp', celular());",
+                  "pm.collectionVariables.set('emailTmp', 'tmp.' + sufijo + '@gimnasio.com');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rol ADMIN no permitido (400)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "usuarios"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula\": \"{{cedTmp}}\",\n  \"nombres\": \"Jorge Luis\",\n  \"apellidos\": \"Vargas Mena\",\n  \"email\": \"{{emailTmp}}\",\n  \"celular\": \"{{celTmp}}\",\n  \"fechaNacimiento\": \"1999-02-02\",\n  \"password\": \"Clave123*\",\n  \"rol\": \"ADMIN\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = (n) => Math.floor(Math.random() * n);",
+                  "function cedula() {",
+                  "  let c = String(1 + r(24)).padStart(2, '0') + r(6);",
+                  "  for (let i = 0; i < 6; i++) c += r(10);",
+                  "  const k = [2, 1, 2, 1, 2, 1, 2, 1, 2];",
+                  "  let s = 0;",
+                  "  for (let i = 0; i < 9; i++) { let v = Number(c[i]) * k[i]; if (v > 9) v -= 9; s += v; }",
+                  "  return c + ((10 - (s % 10)) % 10);",
+                  "}",
+                  "const celular = () => '09' + String(r(100000000)).padStart(8, '0');",
+                  "const sufijo = Date.now().toString().slice(-7) + r(10);",
+                  "pm.collectionVariables.set('cedTmp', cedula());",
+                  "pm.collectionVariables.set('celTmp', celular());",
+                  "pm.collectionVariables.set('emailTmp', 'tmp.' + sufijo + '@gimnasio.com');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "ENTRENADOR sin especialidad (400)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "usuarios"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula\": \"{{cedTmp}}\",\n  \"nombres\": \"Jorge Luis\",\n  \"apellidos\": \"Vargas Mena\",\n  \"email\": \"{{emailTmp}}\",\n  \"celular\": \"{{celTmp}}\",\n  \"fechaNacimiento\": \"1999-02-02\",\n  \"password\": \"Clave123*\",\n  \"rol\": \"ENTRENADOR\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = (n) => Math.floor(Math.random() * n);",
+                  "function cedula() {",
+                  "  let c = String(1 + r(24)).padStart(2, '0') + r(6);",
+                  "  for (let i = 0; i < 6; i++) c += r(10);",
+                  "  const k = [2, 1, 2, 1, 2, 1, 2, 1, 2];",
+                  "  let s = 0;",
+                  "  for (let i = 0; i < 9; i++) { let v = Number(c[i]) * k[i]; if (v > 9) v -= 9; s += v; }",
+                  "  return c + ((10 - (s % 10)) % 10);",
+                  "}",
+                  "const celular = () => '09' + String(r(100000000)).padStart(8, '0');",
+                  "const sufijo = Date.now().toString().slice(-7) + r(10);",
+                  "pm.collectionVariables.set('cedTmp', cedula());",
+                  "pm.collectionVariables.set('celTmp', celular());",
+                  "pm.collectionVariables.set('emailTmp', 'tmp.' + sufijo + '@gimnasio.com');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Datos inválidos: cédula, celular y contraseña (400)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "usuarios"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula\": \"1234567890\",\n  \"nombres\": \"Jorge 2\",\n  \"apellidos\": \"Vargas\",\n  \"email\": \"correo-malo\",\n  \"celular\": \"+593987654321\",\n  \"fechaNacimiento\": \"1999-02-02\",\n  \"password\": \"123\",\n  \"rol\": \"SOCIO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "RECEPCIONISTA extra hasta llegar al máximo de 5 (la 6.ª da 400)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "usuarios"
+              ]
+            },
+            "description": "Con el Runner se repite sola hasta que el API responde 400 (máximo 5 recepcionistas). Con \"Send\" manual, presiónela varias veces hasta ver el 400. Las rechazadas no cuentan.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cedula\": \"{{cedTmp}}\",\n  \"nombres\": \"Sofia Elena\",\n  \"apellidos\": \"Ramirez Cano\",\n  \"email\": \"{{emailTmp}}\",\n  \"celular\": \"{{celTmp}}\",\n  \"fechaNacimiento\": \"1995-03-08\",\n  \"password\": \"Clave123*\",\n  \"rol\": \"RECEPCIONISTA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const r = (n) => Math.floor(Math.random() * n);",
+                  "function cedula() {",
+                  "  let c = String(1 + r(24)).padStart(2, '0') + r(6);",
+                  "  for (let i = 0; i < 6; i++) c += r(10);",
+                  "  const k = [2, 1, 2, 1, 2, 1, 2, 1, 2];",
+                  "  let s = 0;",
+                  "  for (let i = 0; i < 9; i++) { let v = Number(c[i]) * k[i]; if (v > 9) v -= 9; s += v; }",
+                  "  return c + ((10 - (s % 10)) % 10);",
+                  "}",
+                  "const celular = () => '09' + String(r(100000000)).padStart(8, '0');",
+                  "const sufijo = Date.now().toString().slice(-7) + r(10);",
+                  "pm.collectionVariables.set('cedTmp', cedula());",
+                  "pm.collectionVariables.set('celTmp', celular());",
+                  "pm.collectionVariables.set('emailTmp', 'recepcionextra.' + sufijo + '@gimnasio.com');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const intentos = Number(pm.collectionVariables.get('intentosRecepcion') || 0) + 1;",
+                  "pm.collectionVariables.set('intentosRecepcion', intentos);",
+                  "const extra = JSON.parse(pm.collectionVariables.get('recepcionistasExtra') || '[]');",
+                  "if (pm.response.code === 201 && intentos < 6) {",
+                  "  extra.push(pm.response.json().id);",
+                  "  pm.collectionVariables.set('recepcionistasExtra', JSON.stringify(extra));",
+                  "  pm.execution.setNextRequest(pm.info.requestName);",
+                  "} else {",
+                  "  pm.collectionVariables.set('intentosRecepcion', 0);",
+                  "  pm.collectionVariables.set('recepcionistasExtra', '[]');",
+                  "  // Limpieza: se eliminan las recepcionistas de prueba para poder volver a ejecutar la colección",
+                  "  extra.forEach((id) => pm.sendRequest({",
+                  "    url: pm.variables.get('baseUrl') + '/api/admin/usuarios/' + id,",
+                  "    method: 'DELETE',",
+                  "    header: { Authorization: 'Bearer ' + pm.collectionVariables.get('tokenAdmin') }",
+                  "  }, () => {}));",
+                  "  pm.test('La 6.ª recepcionista se rechaza (400)', () => {",
+                  "    pm.response.to.have.status(400);",
+                  "    pm.expect(pm.response.json().mensaje).to.include('5 recepcionistas');",
+                  "  });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "description": "POST /api/admin/usuarios con \"rol\": SOCIO (cliente), ENTRENADOR o RECEPCIONISTA. La cédula, el email y el celular deben ser únicos (una persona solo puede tener un rol). Máximo 5 recepcionistas. Las cuentas quedan PENDIENTE_APROBACION. Los datos (cédula, celular, email) se generan solos en cada ejecución."
+    },
+    {
+      "name": "03 - Usuarios por aprobar",
+      "item": [
+        {
+          "name": "Usuarios pendientes de aprobación",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/usuarios/pendientes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "usuarios",
+                "pendientes"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Hay usuarios por aprobar', () => pm.expect(pm.response.json().length).to.be.above(0));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ver un usuario pendiente por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/usuarios/{{socio1UsuarioId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "usuarios",
+                "{{socio1UsuarioId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Filtrar pendientes por rol (ENTRENADOR)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/usuarios?estado=PENDIENTE_VERIFICACION&rol=ENTRENADOR",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "usuarios"
+              ],
+              "query": [
+                {
+                  "key": "estado",
+                  "value": "PENDIENTE_VERIFICACION"
+                },
+                {
+                  "key": "rol",
+                  "value": "ENTRENADOR"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 - Validar código y aprobar (1) o rechazar (2)",
+      "item": [
+        {
+          "name": "Sin código de verificación (400)",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/usuarios/{{socio1UsuarioId}}/revision",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "usuarios",
+                "{{socio1UsuarioId}}",
+                "revision"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Explica el error: obligatorio', () => pm.expect(pm.response.text()).to.include('obligatorio'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Código con letras (400)",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/usuarios/{{socio1UsuarioId}}/revision",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "usuarios",
+                "{{socio1UsuarioId}}",
+                "revision"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codigo\": \"12ab56\",\n  \"decision\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Explica el error: solo debe contener números', () => pm.expect(pm.response.text()).to.include('solo debe contener números'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Código de 5 dígitos (400)",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/usuarios/{{socio1UsuarioId}}/revision",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "usuarios",
+                "{{socio1UsuarioId}}",
+                "revision"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codigo\": \"12345\",\n  \"decision\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Explica el error: 6 dígitos', () => pm.expect(pm.response.text()).to.include('6 dígitos'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Código incorrecto (400, descuenta un intento)",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/usuarios/{{socio1UsuarioId}}/revision",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "usuarios",
+                "{{socio1UsuarioId}}",
+                "revision"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codigo\": \"000000\",\n  \"decision\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test('Explica el error: no coincide', () => pm.expect(pm.response.text()).to.include('no coincide'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Aprobar CLIENTE 1 (decision 1)",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/usuarios/{{socio1UsuarioId}}/revision",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "usuarios",
+                "{{socio1UsuarioId}}",
+                "revision"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codigo\": \"{{codigoSocio1}}\",\n  \"decision\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Se ingresó el código de verificación en la variable codigoSocio1', () => pm.expect(pm.collectionVariables.get('codigoSocio1'), 'Copie el código de la consola del servidor en codigoSocio1').to.match(/^\\d{6}$/));",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('El código fue validado (fechaVerificacion registrada)', () => pm.expect(pm.response.json().fechaVerificacion).to.not.be.null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Aprobar CLIENTE 2 (decision 1)",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/usuarios/{{socio2UsuarioId}}/revision",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "usuarios",
+                "{{socio2UsuarioId}}",
+                "revision"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codigo\": \"{{codigoSocio2}}\",\n  \"decision\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Se ingresó el código de verificación en la variable codigoSocio2', () => pm.expect(pm.collectionVariables.get('codigoSocio2'), 'Copie el código de la consola del servidor en codigoSocio2').to.match(/^\\d{6}$/));",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('El código fue validado (fechaVerificacion registrada)', () => pm.expect(pm.response.json().fechaVerificacion).to.not.be.null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Aprobar ENTRENADOR (decision 1)",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/usuarios/{{entrenadorUsuarioId}}/revision",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "usuarios",
+                "{{entrenadorUsuarioId}}",
+                "revision"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codigo\": \"{{codigoEntrenador}}\",\n  \"decision\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Se ingresó el código de verificación en la variable codigoEntrenador', () => pm.expect(pm.collectionVariables.get('codigoEntrenador'), 'Copie el código de la consola del servidor en codigoEntrenador').to.match(/^\\d{6}$/));",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('El código fue validado (fechaVerificacion registrada)', () => pm.expect(pm.response.json().fechaVerificacion).to.not.be.null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Aprobar RECEPCIONISTA (decision 1)",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/usuarios/{{recepcionistaUsuarioId}}/revision",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "usuarios",
+                "{{recepcionistaUsuarioId}}",
+                "revision"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codigo\": \"{{codigoRecepcion}}\",\n  \"decision\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Se ingresó el código de verificación en la variable codigoRecepcion', () => pm.expect(pm.collectionVariables.get('codigoRecepcion'), 'Copie el código de la consola del servidor en codigoRecepcion').to.match(/^\\d{6}$/));",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('El código fue validado (fechaVerificacion registrada)', () => pm.expect(pm.response.json().fechaVerificacion).to.not.be.null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rechazar usuario (decision 2)",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/usuarios/{{rechazoUsuarioId}}/revision",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "usuarios",
+                "{{rechazoUsuarioId}}",
+                "revision"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codigo\": \"{{codigoRechazo}}\",\n  \"decision\": 2,\n  \"motivo\": \"Documentos incompletos\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Se ingresó el código de verificación en la variable codigoRechazo', () => pm.expect(pm.collectionVariables.get('codigoRechazo'), 'Copie el código de la consola del servidor en codigoRechazo').to.match(/^\\d{6}$/));",
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('El código fue validado (fechaVerificacion registrada)', () => pm.expect(pm.response.json().fechaVerificacion).to.not.be.null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Decisión inválida: 3 (400)",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/usuarios/{{socio1UsuarioId}}/revision",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "usuarios",
+                "{{socio1UsuarioId}}",
+                "revision"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codigo\": \"{{codigoSocio1}}\",\n  \"decision\": 3\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sin decisión (400)",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/usuarios/{{socio1UsuarioId}}/revision",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "usuarios",
+                "{{socio1UsuarioId}}",
+                "revision"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Revisar una cuenta ya aprobada (400)",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/usuarios/{{socio1UsuarioId}}/revision",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "usuarios",
+                "{{socio1UsuarioId}}",
+                "revision"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codigo\": \"{{codigoSocio1}}\",\n  \"decision\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Eliminar la solicitud rechazada (204)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/usuarios/{{rechazoUsuarioId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "usuarios",
+                "{{rechazoUsuarioId}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "description": "PUT /api/admin/usuarios/{id}/revision con body { \"codigo\": \"482913\", \"decision\": 1 } para aprobar o { \"codigo\": \"482913\", \"decision\": 2, \"motivo\": \"...\" } para rechazar.\n\nANTES DE EJECUTAR esta carpeta: copie el código de 6 dígitos de cada usuario creado en la carpeta 02 en las variables de la colección codigoSocio1, codigoSocio2, codigoEntrenador, codigoRecepcion y codigoRechazo. Los correos de la colección son ficticios (@gimnasio.com), así que el código se ve en la CONSOLA DEL SERVIDOR (\">>> Código de verificación para ...\", requiere MOSTRAR_CODIGO_EN_CONSOLA=true / app.verificacion.mostrar-codigo-en-consola=true). Si el código coincide se guarda la decisión y al usuario le llega un correo con sus datos, su id y el resultado."
+    },
+    {
+      "name": "05 - Personal dentro del gimnasio",
+      "item": [
+        {
+          "name": "Personal activo (ADMIN, recepcionistas y entrenadores aprobados)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/usuarios/personal",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "usuarios",
+                "personal"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Todos los usuarios aprobados (incluye clientes)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/usuarios?estado=APROBADA",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "usuarios"
+              ],
+              "query": [
+                {
+                  "key": "estado",
+                  "value": "APROBADA"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Entrenadores activos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/entrenadores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "entrenadores"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Clientes (socios) activos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/socios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "socios"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "06 - Agregar clases (cupo por clase)",
+      "item": [
+        {
+          "name": "Crear 'Spinning Intenso' (cupo 20)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/clases",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "clases"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Spinning Intenso\",\n  \"descripcion\": \"Cardio en bicicleta estática\",\n  \"diaSemana\": \"LUNES\",\n  \"horaInicio\": \"07:00\",\n  \"horaFin\": \"08:00\",\n  \"cupoMaximo\": 20,\n  \"entrenadorId\": {{entrenadorId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) {",
+                  "  const r = pm.response.json();",
+                  "  pm.collectionVariables.set('claseId1', r.id);",
+                  "  console.log('claseId1 =', r.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear 'Crossfit Inicial' (cupo 1)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/clases",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "clases"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Crossfit Inicial\",\n  \"descripcion\": \"Clase personalizada: un solo participante\",\n  \"diaSemana\": \"MARTES\",\n  \"horaInicio\": \"18:00\",\n  \"horaFin\": \"19:00\",\n  \"cupoMaximo\": 1,\n  \"entrenadorId\": {{entrenadorId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) {",
+                  "  const r = pm.response.json();",
+                  "  pm.collectionVariables.set('claseId2', r.id);",
+                  "  console.log('claseId2 =', r.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear clase temporal (se elimina abajo)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/clases",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "clases"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Yoga Temporal\",\n  \"descripcion\": null,\n  \"diaSemana\": \"MIERCOLES\",\n  \"horaInicio\": \"10:00\",\n  \"horaFin\": \"11:00\",\n  \"cupoMaximo\": 15,\n  \"entrenadorId\": {{entrenadorId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) {",
+                  "  const r = pm.response.json();",
+                  "  pm.collectionVariables.set('claseId3', r.id);",
+                  "  console.log('claseId3 =', r.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Clase sin entrenador (400: siempre un entrenador por clase)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/clases",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "clases"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Pilates\",\n  \"descripcion\": null,\n  \"diaSemana\": \"JUEVES\",\n  \"horaInicio\": \"09:00\",\n  \"horaFin\": \"10:00\",\n  \"cupoMaximo\": 10\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Entrenador que no existe (404)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/clases",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "clases"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Pilates\",\n  \"descripcion\": null,\n  \"diaSemana\": \"JUEVES\",\n  \"horaInicio\": \"09:00\",\n  \"horaFin\": \"10:00\",\n  \"cupoMaximo\": 10,\n  \"entrenadorId\": 999999\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mismo entrenador con clase cruzada (400)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/clases",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "clases"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Funcional\",\n  \"descripcion\": null,\n  \"diaSemana\": \"LUNES\",\n  \"horaInicio\": \"07:30\",\n  \"horaFin\": \"08:30\",\n  \"cupoMaximo\": 10,\n  \"entrenadorId\": {{entrenadorId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cupo de 40 participantes (400: máximo 30)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/clases",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "clases"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Zumba\",\n  \"descripcion\": null,\n  \"diaSemana\": \"VIERNES\",\n  \"horaInicio\": \"17:00\",\n  \"horaFin\": \"18:00\",\n  \"cupoMaximo\": 40,\n  \"entrenadorId\": {{entrenadorId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cupo 0 (400: mínimo 1)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/clases",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "clases"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Zumba\",\n  \"descripcion\": null,\n  \"diaSemana\": \"VIERNES\",\n  \"horaInicio\": \"17:00\",\n  \"horaFin\": \"18:00\",\n  \"cupoMaximo\": 0,\n  \"entrenadorId\": {{entrenadorId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Fuera del horario del gimnasio 05:00 (400)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/clases",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "clases"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Madrugadores\",\n  \"descripcion\": null,\n  \"diaSemana\": \"SABADO\",\n  \"horaInicio\": \"05:00\",\n  \"horaFin\": \"06:00\",\n  \"cupoMaximo\": 10,\n  \"entrenadorId\": {{entrenadorId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Editar 'Spinning Intenso' (cupo 25)",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/clases/{{claseId1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "clases",
+                "{{claseId1}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Spinning Intenso\",\n  \"descripcion\": \"Cardio en bicicleta estática\",\n  \"diaSemana\": \"LUNES\",\n  \"horaInicio\": \"07:00\",\n  \"horaFin\": \"08:00\",\n  \"cupoMaximo\": 25,\n  \"entrenadorId\": {{entrenadorId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Eliminar clase temporal (204)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/clases/{{claseId3}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "clases",
+                "{{claseId3}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "description": "El ADMIN crea la clase indicando el entrenador encargado (entrenadorId). cupoMaximo controla cuántos participantes acepta cada clase (1 a 30)."
+    },
+    {
+      "name": "07 - Listar clases (horarios y entrenador)",
+      "item": [
+        {
+          "name": "Listar todas las clases",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/clases",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "clases"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Cada clase tiene horario y entrenador', () => {",
+                  "  pm.response.json().forEach(c => {",
+                  "    pm.expect(c.horario).to.be.a('string');",
+                  "    pm.expect(c.entrenadorId).to.not.be.null;",
+                  "  });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ver una clase por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/clases/{{claseId1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "clases",
+                "{{claseId1}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Clase que no existe (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/clases/999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "clases",
+                "999999"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "description": "Cada clase muestra: día, hora de inicio y fin, horario, cupo máximo, inscritos, cupos disponibles y el entrenador encargado."
+    },
+    {
+      "name": "08 - Membresías",
+      "item": [
+        {
+          "name": "Ver planes (QUINCENAL, MENSUAL, ANUAL)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/planes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "planes"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear membresía MENSUAL al CLIENTE 1",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/membresias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "membresias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"socioId\": {{socio1Id}},\n  \"tipoPlan\": \"MENSUAL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) {",
+                  "  const r = pm.response.json();",
+                  "  pm.collectionVariables.set('membresiaId1', r.id);",
+                  "  console.log('membresiaId1 =', r.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear membresía QUINCENAL al CLIENTE 2",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/membresias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "membresias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"socioId\": {{socio2Id}},\n  \"tipoPlan\": \"QUINCENAL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) {",
+                  "  const r = pm.response.json();",
+                  "  pm.collectionVariables.set('membresiaId2', r.id);",
+                  "  console.log('membresiaId2 =', r.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cliente que ya tiene membresía activa (400)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/membresias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "membresias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"socioId\": {{socio1Id}},\n  \"tipoPlan\": \"ANUAL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Plan que no existe: SEMANAL (400)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/membresias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "membresias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"socioId\": {{socio1Id}},\n  \"tipoPlan\": \"SEMANAL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar todas las membresías",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/membresias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "membresias"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ver membresía por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/membresias/{{membresiaId1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "membresias",
+                "{{membresiaId1}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Membresías de un cliente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/membresias/socio/{{socio1Id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "membresias",
+                "socio",
+                "{{socio1Id}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cambiar plan de la membresía 2 a ANUAL",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/membresias/{{membresiaId2}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "membresias",
+                "{{membresiaId2}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tipoPlan\": \"ANUAL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancelar membresía 2",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/membresias/{{membresiaId2}}/cancelar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "membresias",
+                "{{membresiaId2}}",
+                "cancelar"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancelar otra vez (400)",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/membresias/{{membresiaId2}}/cancelar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "membresias",
+                "{{membresiaId2}}",
+                "cancelar"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Eliminar membresía 2 (sin pagos, 204)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/membresias/{{membresiaId2}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "membresias",
+                "{{membresiaId2}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Nueva membresía MENSUAL al CLIENTE 2",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/membresias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "membresias"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"socioId\": {{socio2Id}},\n  \"tipoPlan\": \"MENSUAL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) {",
+                  "  const r = pm.response.json();",
+                  "  pm.collectionVariables.set('membresiaId2', r.id);",
+                  "  console.log('membresiaId2 =', r.id);",
+                  "  pm.collectionVariables.set('saldoMembresia2', r.saldoPendiente);",
+                  "  console.log('saldoMembresia2 =', r.saldoPendiente);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "09 - Pagos",
+      "item": [
+        {
+          "name": "Pago en EFECTIVO (abono de $10)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pagos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pagos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"membresiaId\": {{membresiaId1}},\n  \"monto\": 10.0,\n  \"metodoPago\": \"EFECTIVO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) {",
+                  "  const r = pm.response.json();",
+                  "  pm.collectionVariables.set('pagoId1', r.id);",
+                  "  console.log('pagoId1 =', r.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pago por TRANSFERENCIA con referencia ($15)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pagos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pagos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"membresiaId\": {{membresiaId1}},\n  \"monto\": 15.0,\n  \"metodoPago\": \"TRANSFERENCIA\",\n  \"referencia\": \"TRX-458712\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) {",
+                  "  const r = pm.response.json();",
+                  "  pm.collectionVariables.set('pagoId2', r.id);",
+                  "  console.log('pagoId2 =', r.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pago con TARJETA del CLIENTE 2 (paga el total del plan)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pagos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pagos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"membresiaId\": {{membresiaId2}},\n  \"monto\": {{saldoMembresia2}},\n  \"metodoPago\": \"TARJETA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "TRANSFERENCIA sin referencia (400)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pagos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pagos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"membresiaId\": {{membresiaId1}},\n  \"monto\": 1.0,\n  \"metodoPago\": \"TRANSFERENCIA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Monto mayor al saldo pendiente (400)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pagos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pagos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"membresiaId\": {{membresiaId1}},\n  \"monto\": 9999.99,\n  \"metodoPago\": \"EFECTIVO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Membresía ya pagada en su totalidad (400)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pagos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pagos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"membresiaId\": {{membresiaId2}},\n  \"monto\": 1.0,\n  \"metodoPago\": \"EFECTIVO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Método de pago inválido: CHEQUE (400)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pagos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pagos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"membresiaId\": {{membresiaId1}},\n  \"monto\": 1.0,\n  \"metodoPago\": \"CHEQUE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar todos los pagos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pagos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pagos"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ver pago por id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pagos/{{pagoId1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pagos",
+                "{{pagoId1}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Pagos de una membresía",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pagos/membresia/{{membresiaId1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pagos",
+                "membresia",
+                "{{membresiaId1}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Corregir monto del pago 1 ($12)",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pagos/{{pagoId1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pagos",
+                "{{pagoId1}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"membresiaId\": {{membresiaId1}},\n  \"monto\": 12.0,\n  \"metodoPago\": \"EFECTIVO\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Eliminar pago 2 (204)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/pagos/{{pagoId2}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "pagos",
+                "{{pagoId2}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Saldo de la membresía después de los pagos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/membresias/{{membresiaId1}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "membresias",
+                "{{membresiaId1}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "10 - Inscripciones",
+      "item": [
+        {
+          "name": "Inscribir CLIENTE 1 en 'Spinning Intenso'",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/inscripciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "inscripciones"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"socioId\": {{socio1Id}},\n  \"claseId\": {{claseId1}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) {",
+                  "  const r = pm.response.json();",
+                  "  pm.collectionVariables.set('inscripcionId1', r.id);",
+                  "  console.log('inscripcionId1 =', r.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Inscribir CLIENTE 1 en 'Crossfit Inicial' (cupo 1)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/inscripciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "inscripciones"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"socioId\": {{socio1Id}},\n  \"claseId\": {{claseId2}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "if (pm.response.code < 300) {",
+                  "  const r = pm.response.json();",
+                  "  pm.collectionVariables.set('inscripcionId2', r.id);",
+                  "  console.log('inscripcionId2 =', r.id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "CLIENTE 2 en 'Crossfit Inicial': cupo lleno (400)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/inscripciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "inscripciones"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"socioId\": {{socio2Id}},\n  \"claseId\": {{claseId2}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Inscribir CLIENTE 2 en 'Spinning Intenso'",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/inscripciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "inscripciones"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"socioId\": {{socio2Id}},\n  \"claseId\": {{claseId1}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Inscripción repetida (409)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/inscripciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "inscripciones"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"socioId\": {{socio1Id}},\n  \"claseId\": {{claseId1}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sin indicar el cliente (400)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/inscripciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "inscripciones"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"claseId\": {{claseId1}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Listar todas las inscripciones",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/inscripciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "inscripciones"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Inscritos de 'Spinning Intenso'",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/clases/{{claseId1}}/inscritos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "clases",
+                "{{claseId1}}",
+                "inscritos"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Clases con cupos actualizados",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/clases",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "clases"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Cancelar inscripción en 'Crossfit Inicial' (libera el cupo, 204)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/inscripciones/{{inscripcionId2}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "inscripciones",
+                "{{inscripcionId2}}"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ahora CLIENTE 2 sí entra en 'Crossfit Inicial'",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/inscripciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "inscripciones"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"socioId\": {{socio2Id}},\n  \"claseId\": {{claseId2}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Inscripción que no existe (404)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/inscripciones/999999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "inscripciones",
+                "999999"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "tokenAdmin",
+      "value": ""
+    },
+    {
+      "key": "intentosRecepcion",
+      "value": ""
+    },
+    {
+      "key": "recepcionistasExtra",
+      "value": ""
+    },
+    {
+      "key": "saldoMembresia2",
+      "value": ""
+    },
+    {
+      "key": "cedSocio1",
+      "value": ""
+    },
+    {
+      "key": "celSocio1",
+      "value": ""
+    },
+    {
+      "key": "emailSocio1",
+      "value": ""
+    },
+    {
+      "key": "cedSocio2",
+      "value": ""
+    },
+    {
+      "key": "celSocio2",
+      "value": ""
+    },
+    {
+      "key": "emailSocio2",
+      "value": ""
+    },
+    {
+      "key": "cedEntrenador",
+      "value": ""
+    },
+    {
+      "key": "celEntrenador",
+      "value": ""
+    },
+    {
+      "key": "emailEntrenador",
+      "value": ""
+    },
+    {
+      "key": "cedRecepcion",
+      "value": ""
+    },
+    {
+      "key": "celRecepcion",
+      "value": ""
+    },
+    {
+      "key": "emailRecepcion",
+      "value": ""
+    },
+    {
+      "key": "cedRechazo",
+      "value": ""
+    },
+    {
+      "key": "celRechazo",
+      "value": ""
+    },
+    {
+      "key": "emailRechazo",
+      "value": ""
+    },
+    {
+      "key": "cedTmp",
+      "value": ""
+    },
+    {
+      "key": "celTmp",
+      "value": ""
+    },
+    {
+      "key": "emailTmp",
+      "value": ""
+    },
+    {
+      "key": "socio1UsuarioId",
+      "value": ""
+    },
+    {
+      "key": "socio1Id",
+      "value": ""
+    },
+    {
+      "key": "socio2UsuarioId",
+      "value": ""
+    },
+    {
+      "key": "socio2Id",
+      "value": ""
+    },
+    {
+      "key": "entrenadorUsuarioId",
+      "value": ""
+    },
+    {
+      "key": "entrenadorId",
+      "value": ""
+    },
+    {
+      "key": "recepcionistaUsuarioId",
+      "value": ""
+    },
+    {
+      "key": "rechazoUsuarioId",
+      "value": ""
+    },
+    {
+      "key": "claseId1",
+      "value": ""
+    },
+    {
+      "key": "claseId2",
+      "value": ""
+    },
+    {
+      "key": "claseId3",
+      "value": ""
+    },
+    {
+      "key": "membresiaId1",
+      "value": ""
+    },
+    {
+      "key": "membresiaId2",
+      "value": ""
+    },
+    {
+      "key": "pagoId1",
+      "value": ""
+    },
+    {
+      "key": "pagoId2",
+      "value": ""
+    },
+    {
+      "key": "inscripcionId1",
+      "value": ""
+    },
+    {
+      "key": "inscripcionId2",
+      "value": ""
+    },
+    {
+      "key": "codigoSocio1",
+      "value": ""
+    },
+    {
+      "key": "codigoSocio2",
+      "value": ""
+    },
+    {
+      "key": "codigoEntrenador",
+      "value": ""
+    },
+    {
+      "key": "codigoRecepcion",
+      "value": ""
+    },
+    {
+      "key": "codigoRechazo",
+      "value": ""
+    }
+  ]
+}

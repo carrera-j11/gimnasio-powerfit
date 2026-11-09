@@ -1,0 +1,4 @@
+target/
+src/main/resources/secretos-local.properties
+.idea/
+*.iml

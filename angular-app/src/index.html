@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>PowerFit</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="PowerFit: gestión de socios, membresías, pagos y clases del gimnasio.">
+  <meta name="theme-color" content="#161a23">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Source+Sans+3:wght@400;600;700&display=swap">
+  <script>
+    // Aplica tema, paleta y tamaño guardados ANTES de que cargue Angular (evita el destello blanco en modo nocturno)
+    try {
+      var p = JSON.parse(localStorage.getItem('powerfit.preferencias') || '{}'), r = document.documentElement;
+      var oscuro = p.tema === 'oscuro' || ((!p.tema || p.tema === 'sistema') && matchMedia('(prefers-color-scheme: dark)').matches);
+      r.dataset.tema = oscuro ? 'oscuro' : 'claro';
+      r.dataset.paleta = p.paleta || 'estandar';
+      if (p.escala) r.style.fontSize = Math.min(125, Math.max(75, p.escala)) + '%';
+      if (p.idioma) r.lang = p.idioma;
+    } catch (e) {}
+  </script>
+</head>
+<body>
+  <app-root></app-root>
+</body>
+</html>
