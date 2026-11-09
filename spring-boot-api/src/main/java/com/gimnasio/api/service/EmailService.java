@@ -12,7 +12,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailException;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
+
+import java.util.List;
+import java.util.Map;
 
 
 @Service
@@ -28,6 +34,16 @@ public class EmailService {
 
     @Value("${app.verificacion.mostrar-codigo-en-consola:false}")
     private boolean mostrarCodigoEnConsola;
+
+    /** Si se define, el correo se envía por la API HTTPS de Brevo (puerto 443) en lugar de SMTP.
+     *  Necesario en Railway, que bloquea los puertos SMTP en los planes Free/Trial/Hobby. */
+    @Value("${app.mail.brevo-api-key:}")
+    private String brevoApiKey;
+
+    @Value("${app.mail.remitente-nombre:Gimnasio PowerFit}")
+    private String remitenteNombre;
+
+    private final RestClient brevo = RestClient.builder().baseUrl("https://api.brevo.com/v3").build();
 
 
     public void enviarCodigoVerificacion(Usuario usuario, String codigo, int minutos) {
@@ -47,15 +63,9 @@ public class EmailService {
                 + "<p style='color:#666'>Si no solicitaste esta cuenta, ignora este mensaje.</p>"
                 + "<hr><small style='color:#888'>Gimnasio PowerFit - mensaje automático, no responder</small></div>";
         try {
-            MimeMessage mensaje = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(mensaje, "UTF-8");
-            helper.setFrom(remitente);
-            helper.setTo(usuario.getEmail());
-            helper.setSubject("Tu código de verificación: " + codigo + " - Gimnasio PowerFit");
-            helper.setText(html, true);
-            mailSender.send(mensaje);
+            enviar(usuario.getEmail(), "Tu código de verificación: " + codigo + " - Gimnasio PowerFit", html);
             log.info("Código de verificación enviado a {}", usuario.getEmail());
-        } catch (MailException | MessagingException e) {
+        } catch (MailException | MessagingException | RestClientException e) {
             log.error("No se pudo enviar el correo a {}: {}", usuario.getEmail(), e.getMessage());
             if (!mostrarCodigoEnConsola) {
                 throw new EmailException("No se pudo enviar el correo de verificación a " + usuario.getEmail()
@@ -97,16 +107,35 @@ public class EmailService {
                 + "<p>Estos son tus datos registrados:</p>" + datos
                 + "<hr><small style='color:#888'>Gimnasio PowerFit - mensaje automático, no responder</small></div>";
         try {
-            MimeMessage mensaje = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(mensaje, "UTF-8");
-            helper.setFrom(remitente);
-            helper.setTo(usuario.getEmail());
-            helper.setSubject("Tu cuenta fue " + (aprobada ? "APROBADA" : "RECHAZADA") + " - Gimnasio PowerFit");
-            helper.setText(html, true);
-            mailSender.send(mensaje);
+            enviar(usuario.getEmail(), "Tu cuenta fue " + (aprobada ? "APROBADA" : "RECHAZADA") + " - Gimnasio PowerFit", html);
             log.info("Resultado de la revisión ({}) enviado a {}", usuario.getEstado(), usuario.getEmail());
-        } catch (MailException | MessagingException e) {
+        } catch (MailException | MessagingException | RestClientException e) {
             log.error("No se pudo enviar el resultado de la revisión a {}: {}", usuario.getEmail(), e.getMessage());
         }
+    }
+
+    /** Envía el correo por la API de Brevo si hay clave configurada; si no, por SMTP. */
+    private void enviar(String para, String asunto, String html) throws MessagingException {
+        if (brevoApiKey != null && !brevoApiKey.isBlank()) {
+            brevo.post()
+                    .uri("/smtp/email")
+                    .header("api-key", brevoApiKey)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(Map.of(
+                            "sender", Map.of("name", remitenteNombre, "email", remitente),
+                            "to", List.of(Map.of("email", para)),
+                            "subject", asunto,
+                            "htmlContent", html))
+                    .retrieve()
+                    .toBodilessEntity();
+            return;
+        }
+        MimeMessage mensaje = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(mensaje, "UTF-8");
+        helper.setFrom(remitente);
+        helper.setTo(para);
+        helper.setSubject(asunto);
+        helper.setText(html, true);
+        mailSender.send(mensaje);
     }
 }
